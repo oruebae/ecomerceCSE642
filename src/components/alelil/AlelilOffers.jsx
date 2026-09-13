@@ -2,20 +2,15 @@ import React from 'react'
 import { CCol, CRow } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
 import { cilCart, cilCheck, cilTag } from '@coreui/icons'
+import { formatearPrecioCOP } from './AlelilCartModal'
 
-const AlelilOffers = ({ productos = [], carrito = [], onAgregarAlCarrito }) => {
+const AlelilOffers = ({ productos = [], carritoItems = [], onAgregarAlCarrito }) => {
   // Filter products in stock
   const productosOferta = productos.filter((p) => Number(p.stock) > 0).slice(0, 4)
 
   if (productosOferta.length === 0) {
     return null
   }
-
-  const formatearPrecio = (precio) =>
-    new Intl.NumberFormat('es-EC', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(Number(precio))
 
   return (
     <section className="my-5 p-4 rounded-4" style={{ backgroundColor: '#FFFFFF', border: '1px solid #E2E8F0' }}>
@@ -28,14 +23,14 @@ const AlelilOffers = ({ productos = [], carrito = [], onAgregarAlCarrito }) => {
             Ofertas Destacadas
           </h2>
           <small className="text-secondary">
-            Artículos disponibles con stock entrega inmediata
+            Artículos disponibles con stock entrega inmediata en Colombia
           </small>
         </div>
       </div>
 
       <CRow className="g-4">
         {productosOferta.map((producto) => {
-          const yaEstaEnCarrito = carrito.includes(producto.id)
+          const itemEnCarrito = carritoItems.find((item) => item.id === producto.id)
 
           return (
             <CCol xs={12} sm={6} md={3} key={producto.id}>
@@ -48,6 +43,10 @@ const AlelilOffers = ({ productos = [], carrito = [], onAgregarAlCarrito }) => {
                     }
                     alt={producto.nombre}
                     className="img-fluid object-fit-cover w-100 h-100"
+                    onError={(e) => {
+                      e.target.onerror = null
+                      e.target.src = 'https://placehold.co/600x400/f4f6f8/0b2d5b?text=Alelil'
+                    }}
                   />
                   <div className="position-absolute top-0 end-0 p-2">
                     <span
@@ -63,23 +62,26 @@ const AlelilOffers = ({ productos = [], carrito = [], onAgregarAlCarrito }) => {
                   <h4 className="fs-6 fw-bold text-dark mb-2">{producto.nombre}</h4>
                   <div className="mt-auto pt-2">
                     <div className="d-flex align-items-baseline justify-content-between mb-3">
-                      <span className="product-price">{formatearPrecio(producto.precio)}</span>
+                      <span className="product-price">{formatearPrecioCOP(producto.precio)}</span>
                       <span className="small text-secondary">Stock: {producto.stock}</span>
                     </div>
 
                     <button
                       type="button"
                       className={`btn w-100 btn-add-cart py-2 d-flex align-items-center justify-content-center gap-2 ${
-                        yaEstaEnCarrito ? 'btn-success text-white' : ''
+                        itemEnCarrito ? 'btn-success text-white' : ''
                       }`}
                       style={{
-                        backgroundColor: yaEstaEnCarrito ? '#00C896' : '#FF8A00',
+                        backgroundColor: itemEnCarrito ? '#00C896' : '#FF8A00',
                       }}
                       onClick={() => onAgregarAlCarrito(producto)}
-                      disabled={yaEstaEnCarrito}
                     >
-                      <CIcon icon={yaEstaEnCarrito ? cilCheck : cilCart} size="sm" />
-                      <span>{yaEstaEnCarrito ? 'En el carrito' : 'Aprovechar oferta'}</span>
+                      <CIcon icon={itemEnCarrito ? cilCheck : cilCart} size="sm" />
+                      <span>
+                        {itemEnCarrito
+                          ? `En carrito (${itemEnCarrito.cantidad})`
+                          : 'Aprovechar oferta'}
+                      </span>
                     </button>
                   </div>
                 </div>

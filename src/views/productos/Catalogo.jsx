@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import {
   CAlert,
   CButton,
@@ -7,7 +7,7 @@ import {
   CSpinner,
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
-import { cilCart, cilCheck, cilReload, cilFilter, cilArrowRight } from '@coreui/icons'
+import { cilCart, cilCheck, cilReload, cilFilter, cilArrowRight, cilTrash } from '@coreui/icons'
 
 import { useProductos } from '../../hooks/useProductos'
 import AlelilHeader from '../../components/alelil/AlelilHeader'
@@ -17,15 +17,76 @@ import AlelilCategoriesGrid from '../../components/alelil/AlelilCategoriesGrid'
 import AlelilOffers from '../../components/alelil/AlelilOffers'
 import AlelilBenefits from '../../components/alelil/AlelilBenefits'
 import AlelilFooter from '../../components/alelil/AlelilFooter'
+import AlelilCartModal, { formatearPrecioCOP } from '../../components/alelil/AlelilCartModal'
 
 const CatalogoProductos = () => {
   const { productos, cargando, error, recargar } = useProductos()
   const [busqueda, setBusqueda] = useState('')
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState('todos')
-  const [carrito, setCarrito] = useState([])
   const [verTodosProductos, setVerTodosProductos] = useState(false)
+  const [mostrarCartModal, setMostrarCartModal] = useState(false)
 
-  // 1. Dynamic extraction of categories ordered by product volume DESC (ORDER BY COUNT(*) DESC)
+  // Persistent shopping cart state in localStorage
+  const [carritoItems, setCarritoItems] = useState(() => {
+    try {
+      const guardado = localStorage.getItem('alelil_carrito')
+      return guardado ? JSON.parse(guardado) : []
+    } catch {
+      return []
+    }
+  })
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('alelil_carrito', JSON.stringify(carritoItems))
+    } catch (e) {
+      console.error('Error guardando el carrito:', e)
+    }
+  }, [carritoItems])
+
+  // Cart operations
+  const agregarAlCarrito = (producto) => {
+    setCarritoItems((actual) => {
+      const existe = actual.find((item) => item.id === producto.id)
+      if (existe) {
+        return actual.map((item) =>
+          item.id === producto.id
+            ? { ...item, cantidad: (item.cantidad || 1) + 1 }
+            : item
+        )
+      } else {
+        return [...actual, { ...producto, cantidad: 1 }]
+      }
+    })
+  }
+
+  const quitarDelCarrito = (productoId) => {
+    setCarritoItems((actual) => actual.filter((item) => item.id !== productoId))
+  }
+
+  const modificarCantidad = (productoId, delta) => {
+    setCarritoItems((actual) => {
+      return actual
+        .map((item) => {
+          if (item.id === productoId) {
+            const nuevaCantidad = (item.cantidad || 1) + delta
+            return nuevaCantidad > 0 ? { ...item, cantidad: nuevaCantidad } : null
+          }
+          return item
+        })
+        .filter(Boolean)
+    })
+  }
+
+  const vaciarCarrito = () => {
+    setCarritoItems([])
+  }
+
+  const totalUnidadesCarrito = useMemo(() => {
+    return carritoItems.reduce((sum, item) => sum + (item.cantidad || 1), 0)
+  }, [carritoItems])
+
+  // 1. Dynamic extraction of categories ordered by product volume DESC
   const categoriasDinamicas = useMemo(() => {
     const conteoMap = {}
     for (const p of productos) {
@@ -71,19 +132,8 @@ const CatalogoProductos = () => {
   const esVistaInicial = categoriaSeleccionada === 'todos' && !busqueda.trim() && !verTodosProductos
   const productosAmostrar = esVistaInicial ? productosFiltrados.slice(0, 12) : productosFiltrados
 
-  const formatearPrecio = (precio) =>
-    new Intl.NumberFormat('es-EC', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(Number(precio))
-
-  const agregarAlCarrito = (producto) => {
-    setCarrito((actual) => [...actual, producto.id])
-  }
-
   const handleSelectCategoria = (catId) => {
     setCategoriaSeleccionada(catId)
-    // Scroll smoothly to products section
     const prodSection = document.getElementById('seccion-productos')
     if (prodSection) {
       prodSection.scrollIntoView({ behavior: 'smooth' })
@@ -92,11 +142,12 @@ const CatalogoProductos = () => {
 
   return (
     <div className="alelil-store-view bg-light min-vh-100 p-0 m-0">
-      {/* 1. Single Store Header */}
+      {/* 1. Store Header with active cart trigger */}
       <AlelilHeader
         busqueda={busqueda}
         onBusquedaChange={setBusqueda}
-        totalCarrito={carrito.length}
+        totalCarrito={totalUnidadesCarrito}
+        onCartClick={() => setMostrarCartModal(true)}
       />
 
       {/* 2. Subheader Navigation Bar (Dynamic Categories) */}
@@ -107,19 +158,19 @@ const CatalogoProductos = () => {
       />
 
       <div className="container-xxl py-3">
-        {/* 3. Hero Promo Banner: Mes de la Tecnología */}
+        {/* 3. Hero Promo Banner */}
         <AlelilHero
           onVerOfertasClick={() => handleSelectCategoria('ofertas')}
         />
 
-        {/* 4. Section: Compra por Categoría (Top 4 Featured + Ver Más Modal) */}
+        {/* 4. Section: Compra por Categoría */}
         <AlelilCategoriesGrid
           topCategorias={top4Categorias}
           todasCategorias={categoriasDinamicas}
           onSelectCategory={handleSelectCategoria}
         />
 
-        {/* 5. Section: Productos Destacados (12 Real Products Initially) */}
+        {/* 5. Section: Productos Destacados */}
         <section id="seccion-productos" className="my-5">
           <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
             <div>
@@ -172,7 +223,6 @@ const CatalogoProductos = () => {
 
           {!cargando && !error && (
             <>
-              {/* 4 Columns Desktop / 2 Columns Mobile */}
               <CRow className="g-3 g-md-4">
                 {productosAmostrar.length === 0 ? (
                   <CCol xs={12}>
@@ -184,7 +234,7 @@ const CatalogoProductos = () => {
                   </CCol>
                 ) : (
                   productosAmostrar.map((producto) => {
-                    const yaEstaEnCarrito = carrito.includes(producto.id)
+                    const itemEnCarrito = carritoItems.find((item) => item.id === producto.id)
                     const enStock = Number(producto.stock) > 0
 
                     return (
@@ -199,6 +249,10 @@ const CatalogoProductos = () => {
                               }
                               alt={producto.nombre}
                               className="img-fluid object-fit-cover w-100 h-100"
+                              onError={(e) => {
+                                e.target.onerror = null
+                                e.target.src = 'https://placehold.co/600x400/f4f6f8/0b2d5b?text=Alelil'
+                              }}
                             />
                             <div className="position-absolute top-0 end-0 p-2">
                               <span
@@ -238,29 +292,46 @@ const CatalogoProductos = () => {
                             <div className="mt-auto pt-2">
                               <div className="d-flex align-items-baseline justify-content-between mb-3">
                                 <span className="product-price">
-                                  {formatearPrecio(producto.precio)}
+                                  {formatearPrecioCOP(producto.precio)}
                                 </span>
                                 {producto.stock !== undefined && (
-                                  <span className="small text-secondary">
+                                  <span className="small text-secondary font-monospace">
                                     Stock: {producto.stock}
                                   </span>
                                 )}
                               </div>
 
-                              <button
-                                type="button"
-                                className={`btn w-100 btn-add-cart py-2 d-flex align-items-center justify-content-center gap-2 ${
-                                  yaEstaEnCarrito ? 'btn-success text-white' : ''
-                                }`}
-                                style={{
-                                  backgroundColor: yaEstaEnCarrito ? '#00C896' : '#0B2D5B',
-                                }}
-                                onClick={() => agregarAlCarrito(producto)}
-                                disabled={yaEstaEnCarrito || !enStock}
-                              >
-                                <CIcon icon={yaEstaEnCarrito ? cilCheck : cilCart} size="sm" />
-                                <span>{yaEstaEnCarrito ? 'En el carrito' : 'Agregar al carrito'}</span>
-                              </button>
+                              <div className="d-flex gap-2">
+                                <button
+                                  type="button"
+                                  className={`btn flex-grow-1 btn-add-cart py-2 d-flex align-items-center justify-content-center gap-2 ${
+                                    itemEnCarrito ? 'btn-success text-white' : ''
+                                  }`}
+                                  style={{
+                                    backgroundColor: itemEnCarrito ? '#00C896' : '#0B2D5B',
+                                  }}
+                                  onClick={() => agregarAlCarrito(producto)}
+                                  disabled={!enStock}
+                                >
+                                  <CIcon icon={itemEnCarrito ? cilCheck : cilCart} size="sm" />
+                                  <span>
+                                    {itemEnCarrito
+                                      ? `En el carrito (${itemEnCarrito.cantidad})`
+                                      : 'Agregar al carrito'}
+                                  </span>
+                                </button>
+
+                                {itemEnCarrito && (
+                                  <button
+                                    type="button"
+                                    className="btn btn-outline-danger p-2 d-flex align-items-center justify-content-center"
+                                    onClick={() => quitarDelCarrito(producto.id)}
+                                    title="Quitar del carrito"
+                                  >
+                                    <CIcon icon={cilTrash} size="sm" />
+                                  </button>
+                                )}
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -270,7 +341,6 @@ const CatalogoProductos = () => {
                 )}
               </CRow>
 
-              {/* Button: "Ver todos los productos →" */}
               {esVistaInicial && productosFiltrados.length > 12 && (
                 <div className="text-center mt-5">
                   <button
@@ -290,7 +360,7 @@ const CatalogoProductos = () => {
         {/* 6. Section: Ofertas */}
         <AlelilOffers
           productos={productos}
-          carrito={carrito}
+          carritoItems={carritoItems}
           onAgregarAlCarrito={agregarAlCarrito}
         />
 
@@ -298,7 +368,17 @@ const CatalogoProductos = () => {
         <AlelilBenefits />
       </div>
 
-      {/* 8. Independent Commercial Footer */}
+      {/* 8. Cart Modal View */}
+      <AlelilCartModal
+        visible={mostrarCartModal}
+        onClose={() => setMostrarCartModal(false)}
+        items={carritoItems}
+        onUpdateCantidad={modificarCantidad}
+        onRemoveItem={quitarDelCarrito}
+        onVaciarCarrito={vaciarCarrito}
+      />
+
+      {/* 9. Commercial Footer */}
       <AlelilFooter
         categorias={categoriasDinamicas}
         onSelectCategory={handleSelectCategoria}

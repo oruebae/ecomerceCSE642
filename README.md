@@ -1,131 +1,130 @@
-# BIU eCommerce Admin Platform 2026
+# Alelil OFICIAL — Plataforma eCommerce & Panel de Administración
 
-<p align="center">
-  <img src="public/captura.png" alt="BIU eCommerce Admin Platform" width="900" />
-</p>
+Plataforma eCommerce y panel de administración para la marca **Alelil OFICIAL** (Montería / Colombia), desarrollada con React 19, CoreUI React y Supabase Auth / PostgreSQL.
 
-Plataforma administrativa para un eCommerce, desarrollada con React, CoreUI y Supabase. La interfaz está enfocada en la gestión de productos y el control del catálogo comercial del negocio.
+---
 
-## Descripción
+## 🌟 Alcance del Proyecto
 
-Esta app funciona como un panel administrativo para una tienda online, donde se pueden gestionar:
+El sistema ofrece una arquitectura dual:
 
-- Productos
-- Catálogo
-- Inventario
-- Categorías y marcas
-- Agregado y consulta de artículos
-- Visualización del catálogo comercial
+1. **Tienda Comercial Pública (`/#/productos/catalogo`):**
+   - Encabezado comercial único (`AlelilHeader.jsx`) con buscador dinámico e indicador de carrito.
+   - Navegación por categorías 100% dinámicas extraídas directamente de la base de datos (`productos.categoria` con `ORDER BY COUNT(*) DESC`).
+   - Sección de categorías destacadas (Top 4) con modal expansivo "Ver más categorías".
+   - Carrusel de ofertas y beneficios comerciales de la marca Alelil.
+   - Carrito de compras completo interactivo (`AlelilCartModal.jsx`) con persistencia en `localStorage`:
+     - Agregar productos con control de cantidades.
+     - Modificación de cantidades (`+` / `-`).
+     - Eliminación individual de productos (`quitarDelCarrito`).
+     - Opción de vaciar el carrito y flujo de simulación de pedido/compra.
+   - Precios unificados en formato **COP (Pesos Colombianos)** sin centavos.
+   - Footer corporativo independiente (`AlelilFooter.jsx`) con datos reales de contacto en **Montería, Colombia** (`contacto@alelil.com.co`, WhatsApp `+57 310 2103434`).
 
-## Menú principal actual
+2. **Panel de Administración Full-Width (`/#/productos/lista`):**
+   - Vista a pantalla completa (sin sidebar lateral ni headers genéricos de CoreUI).
+   - Sticky Header Corporativo en **Azul Navy (`#0B2D5B`)** con badge **PANEL ADMIN** en Verde Menta (`#00C896`).
+   - Botón *"← Ver Tienda"* para retornar al catálogo comercial.
+   - Visualización dinámica del correo del usuario autenticado (`supabase.auth.getUser()`).
+   - Botón de Cierre de Sesión (`supabase.auth.signOut()`).
+   - Botón principal **"+ Agregar Producto"** en Naranja Vibrante (`#FF8A00`).
+   - Tabla CRUD de inventario con búsqueda en tiempo real, paginación dinámica, badges de stock y acciones rápidas con modales CoreUI (`CModal`).
 
-El sidebar de la aplicación incluye secciones orientadas a un eCommerce, por ejemplo:
+3. **Seguridad y Control de Acceso (`RutaProtegida.jsx` & RLS):**
+   - Guardia de navegación estricto en el frontend (`RutaProtegida.jsx`): Restringe las rutas administrativas (`/productos/lista`, `/productos/agregar`, `/productos/editar/:id`, `/dashboard`) exigiendo sesión activa del correo administrador **`admin@tienda.com`**. Usuarios no administradores o anónimos ven una pantalla de *Acceso Restringido*.
+   - Script SQL de Row Level Security (`supabase_rls_policies.sql`): Lectura pública (`SELECT`), escritura restringida a `auth.jwt() -> email = 'admin@tienda.com'`.
 
-- Dashboard
-- Productos
-  - Catálogo de Productos
-  - Agregar Producto
-  - Lista de Productos
-  - Categorías
-  - Inventario
-  - Marcas
-- Clientes
-  - Clientes
-  - Direcciones
-  - Wishlist
-  - Favoritos
-- Proveedores
-  - Proveedores
-  - Compras
-  - Pedidos a Proveedor
-  - Facturas
-- Ventas
-  - Pedidos
-  - Órdenes
-  - Pagos
-  - Devoluciones
-- Marketing
-  - Promociones
-  - Cupones
-  - Campañas
-  - Banners
-- Configuración
-  - Configuración General
-  - Usuarios
-  - Roles y Permisos
-  - Monedas
+---
 
-## Funcionalidades implementadas
+## 🛠️ Stack Tecnológico
 
-### Gestión de productos
-- Catálogo visual con imagen, precio y estado de stock
-- Botón para agregar al carrito local
-- Formulario para registrar nuevos productos
-- Listado de productos con búsqueda y paginación
-- Edición de productos desde modal
-- Eliminación de productos desde modal
-- Conexión directa con la tabla `productos` de Supabase
+- **Frontend:** React 19, React Router (HashRouter), CoreUI React 5, CoreUI Icons.
+- **Backend & DB:** Supabase (Auth & PostgreSQL).
+- **Estilos:** Vanilla SCSS/CSS de CoreUI + Tokens de Diseño Alelil OFICIAL (`#0B2D5B`, `#00C896`, `#FF8A00`, `#F4F6F8`).
+- **Empaquetador:** Vite 8.
 
-## Rutas principales
+---
 
-- `/dashboard`
-- `/productos/catalogo`
-- `/productos/agregar`
-- `/productos/lista`
+## 📁 Estructura del Proyecto
 
-## Stack tecnológico
+```text
+c:/ProyectosBIU/eCommerceBIU2026/
+├── public/
+│   ├── favicon.ico
+│   └── logo_alelil.png
+├── src/
+│   ├── assets/
+│   │   ├── brand/           # Logotipos corporativos de Alelil
+│   │   └── icons/           # Iconografía CoreUI
+│   ├── components/
+│   │   ├── alelil/          # Componentes de marca Alelil Oficial
+│   │   │   ├── AlelilBenefits.jsx
+│   │   │   ├── AlelilCartModal.jsx   # Modal e interacción del Carrito
+│   │   │   ├── AlelilCategoriesGrid.jsx
+│   │   │   ├── AlelilFooter.jsx     # Footer comercial (Montería/Colombia)
+│   │   │   ├── AlelilHeader.jsx     # Header comercial único
+│   │   │   ├── AlelilHero.jsx
+│   │   │   ├── AlelilNav.jsx        # Subheader de categorías dinámicas
+│   │   │   └── AlelilOffers.jsx
+│   │   ├── auth/
+│   │   │   └── RutaProtegida.jsx    # Guardia de seguridad (admin@tienda.com)
+│   │   ├── brand/
+│   │   │   └── AlelilLogo.jsx       # SVG oficial Alelil
+│   │   ├── AppContent.jsx           # Enrutador interno Full-Width
+│   │   ├── AppHeaderDropdown.jsx    # Dropdown con Logout
+│   │   ├── AppSidebar.jsx           # Sidebar condicional
+│   │   └── index.js
+│   ├── hooks/
+│   │   └── useProductos.js          # Custom Hook CRUD con Supabase
+│   ├── layout/
+│   │   └── DefaultLayout.jsx        # Layout principal responsivo
+│   ├── lib/
+│   │   └── supabase.js              # Cliente e inicialización de Supabase
+│   ├── views/
+│   │   ├── authentication/          # Módulo de Autenticación
+│   │   │   ├── login/Login.jsx
+│   │   │   └── register/Register.jsx
+│   │   └── productos/               # Módulo de Gestión de Productos
+│   │       ├── AgregarProducto.jsx
+│   │       ├── Catalogo.jsx
+│   │       ├── EditarProducto.jsx
+│   │       └── Lista.jsx            # Panel Admin Full-Width
+│   ├── App.jsx                      # Configuración de Rutas Globales
+│   └── routes.js
+├── supabase_rls_policies.sql         # Script RLS de Seguridad en DB
+├── package.json
+└── README.md
+```
 
-- React 19
-- Vite
-- CoreUI React
-- Supabase JS
+---
 
-## Variables de entorno
+## 🔑 Configuración de Variables de Entorno
 
-Crea un archivo `.env` con estas variables:
+Crea un archivo `.env` en la raíz del proyecto (excluido en `.gitignore`):
 
 ```env
-VITE_SUPABASE_URL=tu_url_de_supabase
-VITE_SUPABASE_PUBLISHABLE_KEY=tu_clave_publica
+VITE_SUPABASE_URL=https://tu-proyecto.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=tu-anon-key-de-supabase
 ```
 
-## Instalación
+---
+
+## 🚀 Instalación y Ejecución
 
 ```bash
+# 1. Instalar dependencias
 npm install
-```
 
-## Ejecutar en desarrollo
-
-```bash
+# 2. Iniciar servidor de desarrollo en puerto 3000
 npm start
-```
 
-## Build de producción
-
-```bash
+# 3. Compilar bundle de producción
 npm run build
 ```
 
-## Estructura principal
+---
 
-```text
-src/
-├── hooks/
-│   └── useProductos.js
-├── lib/
-│   └── supabase.js
-├── views/
-│   └── productos/
-│       ├── Catalogo.jsx
-│       ├── AgregarProducto.jsx
-│       └── Lista.jsx
-├── _nav.jsx
-├── routes.js
-├── App.jsx
-└── components/
-```
+## 🔒 Credenciales de Prueba
 
-## Nota
-
-La interfaz actual está diseñada como una administración moderna de eCommerce y está preparada para crecer con más módulos de clientes, proveedores, ventas y marketing.
+- **Administrador:** `admin@tienda.com` / `admin123` (Acceso completo al catálogo y panel de administración).
+- **Cliente Registrado:** Puede registrarse desde `/#/authentication/register` o iniciar sesión para acceder al catálogo público.

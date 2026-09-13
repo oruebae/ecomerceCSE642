@@ -32,27 +32,12 @@ import {
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
 
+import AlelilLogo from './brand/AlelilLogo'
 import { AppSidebarNav } from './AppSidebarNav'
-
-import { logo } from 'src/assets/brand/logo'
-//import logobiu from './src/assets/brand/logobiu.png'
-import { sygnet } from 'src/assets/brand/sygnet'
 
 // sidebar nav config
 import navigation from '../_nav'
 
-/**
- * AppSidebar functional component
- *
- * Manages sidebar state with Redux:
- * - sidebarShow: Controls sidebar visibility
- * - sidebarUnfoldable: Controls narrow/wide mode
- *
- * Renders navigation from _nav.js configuration file.
- * Memoized to prevent unnecessary re-renders.
- *
- * @returns {React.ReactElement} Sidebar with navigation
- */
 const AppSidebar = () => {
   const dispatch = useDispatch()
   const unfoldable = useSelector((state) => state.sidebarUnfoldable)
@@ -67,29 +52,22 @@ const AppSidebar = () => {
       visible={sidebarShow}
       style={{
         backgroundColor: '#ffffff',
-        color: '#0d6efd',
+        color: '#0B2D5B',
         '--cui-sidebar-bg': '#ffffff',
-        '--cui-sidebar-color': '#0d6efd',
+        '--cui-sidebar-color': '#0B2D5B',
         '--cui-sidebar-border-color': '#e9ecef',
-        '--cui-sidebar-link-color': '#0d6efd',
-        '--cui-sidebar-link-hover-color': '#084298',
-        '--cui-sidebar-link-active-color': '#084298',
+        '--cui-sidebar-link-color': '#0B2D5B',
+        '--cui-sidebar-link-hover-color': '#00C896',
+        '--cui-sidebar-link-active-color': '#00C896',
       }}
       onVisibleChange={(visible) => {
         dispatch({ type: 'set', sidebarShow: visible })
       }}
     >
       <CSidebarHeader className="border-bottom" style={{ backgroundColor: '#ffffff' }}>
-        <CSidebarBrand to="/" className="justify-content-center">
-          <img
-            src="/src/assets/brand/logobiu.png"
-            alt="Logo BIU"
-            className="sidebar-brand-full d-block mx-auto"
-            height={70}
-            width={150}
-            style={{ objectFit: 'contain' }}
-          />
-          <CIcon customClassName="sidebar-brand-narrow" icon={sygnet} height={32} />
+        <CSidebarBrand to="/" className="justify-content-center py-2">
+          <AlelilLogo theme="light" height={36} showSlogan={false} className="sidebar-brand-full" />
+          <AlelilLogo variant="icon" height={30} className="sidebar-brand-narrow" />
         </CSidebarBrand>
         <CCloseButton
           className="d-lg-none"

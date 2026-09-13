@@ -1,5 +1,5 @@
-import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import React, { useEffect, useState } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
 import {
   CAlert,
   CButton,
@@ -15,24 +15,55 @@ import {
 } from '@coreui/react'
 
 import { useProductos } from '../../hooks/useProductos'
+import { supabase } from '../../lib/supabase'
 
 const DEFAULT_FALLBACK_IMAGE = 'https://placehold.co/600x400/f4f6f8/0b2d5b?text=Alelil'
 
-const initialForm = {
-  nombre: '',
-  categoria: '',
-  precio: '',
-  stock: '',
-  imagen_url: '',
-}
-
-const AgregarProducto = () => {
+const EditarProducto = () => {
+  const { id } = useParams()
   const navigate = useNavigate()
-  const { agregarProducto, cargando, error } = useProductos()
-  const [formulario, setFormulario] = useState(initialForm)
+  const { editarProducto } = useProductos()
+
+  const [formulario, setFormulario] = useState({
+    nombre: '',
+    categoria: '',
+    precio: '',
+    stock: '',
+    imagen_url: '',
+  })
+  const [cargandoProducto, setCargandoProducto] = useState(true)
+  const [guardando, setGuardando] = useState(false)
   const [mensaje, setMensaje] = useState('')
   const [tipoMensaje, setTipoMensaje] = useState('success')
-  const [guardando, setGuardando] = useState(false)
+
+  useEffect(() => {
+    const cargarProductoExistente = async () => {
+      if (!id) return
+      setCargandoProducto(true)
+
+      const { data, error } = await supabase
+        .from('productos')
+        .select('*')
+        .eq('id', id)
+        .single()
+
+      if (error || !data) {
+        setTipoMensaje('danger')
+        setMensaje('No se pudo encontrar el producto especificado.')
+      } else {
+        setFormulario({
+          nombre: data.nombre || '',
+          categoria: data.categoria || '',
+          precio: data.precio || '',
+          stock: data.stock || '',
+          imagen_url: data.imagen_url || '',
+        })
+      }
+      setCargandoProducto(false)
+    }
+
+    cargarProductoExistente()
+  }, [id])
 
   const manejarCambio = (evento) => {
     const { name, value } = evento.target
@@ -56,58 +87,68 @@ const AgregarProducto = () => {
       imagen_url: formulario.imagen_url.trim() || DEFAULT_FALLBACK_IMAGE,
     }
 
-    const resultado = await agregarProducto(payload)
+    const resultado = await editarProducto(id, payload)
 
     if (resultado?.success) {
       setTipoMensaje('success')
-      setMensaje('Producto registrado correctamente en la base de datos de Supabase.')
-      setFormulario(initialForm)
+      setMensaje('Producto actualizado correctamente en Supabase.')
+      setTimeout(() => {
+        navigate('/productos/lista')
+      }, 1200)
     } else {
       setTipoMensaje('danger')
-      setMensaje(resultado?.error || 'No se pudo guardar el producto.')
+      setMensaje(resultado?.error || 'No se pudo actualizar el producto.')
     }
 
     setGuardando(false)
   }
 
+  if (cargandoProducto) {
+    return (
+      <div className="text-center py-5">
+        <CSpinner style={{ color: '#00C896' }} />
+        <p className="mt-3 text-secondary">Cargando datos del producto...</p>
+      </div>
+    )
+  }
+
   return (
     <CCard className="mb-4 shadow-sm border-0 rounded-4 overflow-hidden">
       <CCardHeader className="p-3 text-white" style={{ backgroundColor: '#0B2D5B' }}>
-        <strong className="fs-5">Agregar Nuevo Producto</strong>
+        <strong>Editar Producto (ID: {id})</strong>
       </CCardHeader>
 
       <CCardBody className="p-4">
         {mensaje && <CAlert color={tipoMensaje}>{mensaje}</CAlert>}
-        {error && !mensaje && <CAlert color="danger">{error}</CAlert>}
 
         <CForm onSubmit={manejarSubmit}>
           <CRow className="g-3">
             <CCol md={6}>
-              <CFormLabel htmlFor="nombre" className="fw-semibold">Nombre del producto *</CFormLabel>
+              <CFormLabel htmlFor="nombre" className="fw-semibold">Nombre del producto</CFormLabel>
               <CFormInput
                 id="nombre"
                 name="nombre"
                 value={formulario.nombre}
                 onChange={manejarCambio}
-                placeholder="Ej. Celular Alelil Pro 256GB"
+                placeholder="Ej. Celular Alelil X"
                 required
               />
             </CCol>
 
             <CCol md={6}>
-              <CFormLabel htmlFor="categoria" className="fw-semibold">Categoría *</CFormLabel>
+              <CFormLabel htmlFor="categoria" className="fw-semibold">Categoría</CFormLabel>
               <CFormInput
                 id="categoria"
                 name="categoria"
                 value={formulario.categoria}
                 onChange={manejarCambio}
-                placeholder="Ej. Celulares, Audio, Hogar"
+                placeholder="Ej. Celulares, Audio"
                 required
               />
             </CCol>
 
             <CCol md={4}>
-              <CFormLabel htmlFor="precio" className="fw-semibold">Precio ($) *</CFormLabel>
+              <CFormLabel htmlFor="precio" className="fw-semibold">Precio ($)</CFormLabel>
               <CFormInput
                 id="precio"
                 name="precio"
@@ -122,7 +163,7 @@ const AgregarProducto = () => {
             </CCol>
 
             <CCol md={4}>
-              <CFormLabel htmlFor="stock" className="fw-semibold">Stock (Unidades) *</CFormLabel>
+              <CFormLabel htmlFor="stock" className="fw-semibold">Stock (Unidades)</CFormLabel>
               <CFormInput
                 id="stock"
                 name="stock"
@@ -146,7 +187,7 @@ const AgregarProducto = () => {
                 onChange={manejarCambio}
                 placeholder="https://..."
               />
-              <small className="text-secondary">Se asignará imagen por defecto si se omite.</small>
+              <small className="text-secondary">Si se deja vacío, se usará imagen por defecto.</small>
             </CCol>
           </CRow>
 
@@ -155,23 +196,23 @@ const AgregarProducto = () => {
               color="secondary"
               variant="outline"
               type="button"
-              onClick={() => setFormulario(initialForm)}
+              onClick={() => navigate('/productos/lista')}
             >
-              Limpiar
+              Cancelar
             </CButton>
             <CButton
               type="submit"
               style={{ backgroundColor: '#FF8A00', color: '#FFFFFF' }}
-              disabled={guardando || cargando}
-              className="fw-bold border-0 px-4"
+              disabled={guardando}
+              className="fw-bold border-0"
             >
               {guardando ? (
                 <>
                   <CSpinner size="sm" className="me-2" />
-                  Guardando...
+                  Actualizando...
                 </>
               ) : (
-                'Guardar Producto'
+                'Actualizar Producto'
               )}
             </CButton>
           </div>
@@ -181,4 +222,4 @@ const AgregarProducto = () => {
   )
 }
 
-export default AgregarProducto
+export default EditarProducto

@@ -1,123 +1,269 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import {
+  CAlert,
   CButton,
   CCard,
   CCardBody,
   CCol,
   CContainer,
   CForm,
-  CFormCheck,
   CFormInput,
   CFormLabel,
   CInputGroup,
-  CInputGroupText,
   CRow,
-  CTooltip,
+  CSpinner,
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
-import { apple } from 'src/assets/brand/apple'
 import { google } from 'src/assets/brand/google'
-import { logo } from 'src/assets/brand/logo'
-import { eye } from 'src/assets/icons/eye'
+import AlelilLogo from '../../../components/brand/AlelilLogo'
+import { supabase } from '../../../lib/supabase'
 
 const Register = () => {
   const navigate = useNavigate()
+  const [fullName, setFullName] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [cargando, setCargando] = useState(false)
+  const [cargandoGoogle, setCargandoGoogle] = useState(false)
+  const [errorMsg, setErrorMsg] = useState('')
+  const [successMsg, setSuccessMsg] = useState('')
 
-  const handleSubmit = (event) => {
-    event.preventDefault()
-    navigate('/authentication/check-email')
+  const handleRegister = async (e) => {
+    e.preventDefault()
+    setErrorMsg('')
+    setSuccessMsg('')
+
+    if (!email.trim() || !password.trim()) {
+      setErrorMsg('Por favor complete todos los campos obligatorios.')
+      return
+    }
+
+    if (password.length < 6) {
+      setErrorMsg('La contraseña debe tener al menos 6 caracteres.')
+      return
+    }
+
+    if (password !== confirmPassword) {
+      setErrorMsg('Las contraseñas no coinciden. Verifíquelas e intente de nuevo.')
+      return
+    }
+
+    setCargando(true)
+
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email: email.trim(),
+        password: password,
+        options: {
+          data: {
+            full_name: fullName.trim(),
+          },
+        },
+      })
+
+      if (error) {
+        setErrorMsg(error.message || 'Ocurrió un error al registrar el usuario.')
+      } else {
+        if (data?.session) {
+          setSuccessMsg('¡Registro exitoso! Iniciando sesión automáticamente...')
+          setTimeout(() => {
+            navigate('/productos/lista')
+          }, 1000)
+        } else {
+          setSuccessMsg(
+            '¡Registro completado! Si la confirmación por correo está habilitada, revise su bandeja de entrada. De lo contrario, ya puede iniciar sesión.'
+          )
+          setTimeout(() => {
+            navigate('/authentication/login')
+          }, 2500)
+        }
+      }
+    } catch (err) {
+      setErrorMsg('Ocurrió un error inesperado al conectar con Supabase.')
+    } finally {
+      setCargando(false)
+    }
+  }
+
+  const handleGoogleLogin = async () => {
+    setErrorMsg('')
+    setCargandoGoogle(true)
+
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/#/productos/lista`,
+        },
+      })
+
+      if (error) {
+        setErrorMsg(`Error con Google OAuth: ${error.message}`)
+        setCargandoGoogle(false)
+      }
+    } catch (err) {
+      setErrorMsg('No se pudo iniciar el flujo de autenticación con Google.')
+      setCargandoGoogle(false)
+    }
   }
 
   return (
-    <div className="bg-body-tertiary min-vh-100 d-flex flex-row align-items-center">
+    <div className="min-vh-100 d-flex flex-row align-items-center" style={{ backgroundColor: '#F4F6F8' }}>
       <CContainer>
         <CRow className="justify-content-center">
           <CCol md={8} lg={6} xl={5}>
-            <div className="d-flex flex-column gap-4 text-center">
-              <div>
-                <CIcon icon={logo} height={48} />
+            <div className="d-flex flex-column gap-4 py-4">
+              {/* Brand Logo Header */}
+              <div className="text-center py-2">
+                <AlelilLogo theme="light" height={46} showSlogan={true} />
               </div>
-              <CCard className="p-4">
-                <CCardBody className="d-flex flex-column gap-4">
-                  <h2 className="h5 text-center mb-0">Create new account</h2>
-                  <CForm className="row gy-3 text-start" onSubmit={handleSubmit}>
+
+              <CCard className="shadow-sm border-0 rounded-4 overflow-hidden">
+                <div className="p-3 text-white text-center" style={{ backgroundColor: '#0B2D5B' }}>
+                  <h1 className="h5 fw-bold mb-0">Crear Cuenta en Alelil</h1>
+                  <small className="opacity-75">Regístrate para acceder al panel</small>
+                </div>
+
+                <CCardBody className="p-4 d-flex flex-column gap-3">
+                  {errorMsg && (
+                    <CAlert color="danger" dismissible onClick={() => setErrorMsg('')}>
+                      {errorMsg}
+                    </CAlert>
+                  )}
+
+                  {successMsg && (
+                    <CAlert color="success">
+                      {successMsg}
+                    </CAlert>
+                  )}
+
+                  <CForm onSubmit={handleRegister} className="row gy-3">
                     <CCol xs={12}>
-                      <CFormLabel htmlFor="name">Name</CFormLabel>
-                      <CFormInput id="name" placeholder="Your name" autoComplete="name" />
+                      <CFormLabel htmlFor="fullName" className="fw-semibold small text-dark">
+                        Nombre completo
+                      </CFormLabel>
+                      <CFormInput
+                        id="fullName"
+                        type="text"
+                        placeholder="Ej. Juan Pérez"
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
+                        autoComplete="name"
+                        className="py-2"
+                      />
                     </CCol>
+
                     <CCol xs={12}>
-                      <CFormLabel htmlFor="email">Email address</CFormLabel>
+                      <CFormLabel htmlFor="email" className="fw-semibold small text-dark">
+                        Correo electrónico
+                      </CFormLabel>
                       <CFormInput
                         id="email"
                         type="email"
-                        placeholder="your@email.com"
+                        placeholder="usuario@dominio.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
                         autoComplete="email"
+                        required
+                        className="py-2"
                       />
                     </CCol>
+
                     <CCol xs={12}>
-                      <CFormLabel htmlFor="password">Password</CFormLabel>
-                      <CInputGroup>
-                        <CFormInput
-                          id="password"
-                          type="password"
-                          placeholder="Your password"
-                          autoComplete="new-password"
-                        />
-                        <CInputGroupText>
-                          <CTooltip content="Show password">
-                            <CButton
-                              type="button"
-                              color="link"
-                              className="p-0 link-secondary"
-                              aria-label="Show password"
-                            >
-                              <CIcon icon={eye} size="sm" />
-                            </CButton>
-                          </CTooltip>
-                        </CInputGroupText>
-                      </CInputGroup>
+                      <CFormLabel htmlFor="password" className="fw-semibold small text-dark">
+                        Contraseña
+                      </CFormLabel>
+                      <CFormInput
+                        id="password"
+                        type="password"
+                        placeholder="Mínimo 6 caracteres"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        autoComplete="new-password"
+                        required
+                        className="py-2"
+                      />
                     </CCol>
+
                     <CCol xs={12}>
-                      <CFormCheck
-                        id="acceptTerms"
-                        label={
+                      <CFormLabel htmlFor="confirmPassword" className="fw-semibold small text-dark">
+                        Confirmar Contraseña
+                      </CFormLabel>
+                      <CFormInput
+                        id="confirmPassword"
+                        type="password"
+                        placeholder="Repita su contraseña"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        autoComplete="new-password"
+                        required
+                        className="py-2"
+                      />
+                    </CCol>
+
+                    <CCol xs={12} className="mt-4">
+                      <CButton
+                        type="submit"
+                        className="w-100 py-2 border-0 fw-bold shadow-sm"
+                        style={{ backgroundColor: '#FF8A00', color: '#FFFFFF' }}
+                        disabled={cargando || cargandoGoogle}
+                      >
+                        {cargando ? (
                           <>
-                            I accept the <a href="#">terms and conditions</a>
+                            <CSpinner size="sm" className="me-2" />
+                            Registrando cuenta...
                           </>
-                        }
-                      />
-                    </CCol>
-                    <CCol xs={12}>
-                      <CButton color="primary" type="submit" className="w-100">
-                        Create new account
+                        ) : (
+                          'Registrarse'
+                        )}
                       </CButton>
                     </CCol>
                   </CForm>
-                  <div className="position-relative">
-                    <hr />
-                    <div className="position-absolute top-50 start-50 translate-middle bg-body px-2 text-body-tertiary text-uppercase small">
-                      or
+
+                  <div className="position-relative my-2">
+                    <hr className="text-secondary opacity-25" />
+                    <div className="position-absolute top-50 start-50 translate-middle bg-white px-3 text-secondary small font-monospace">
+                      O REGÍSTRATE CON
                     </div>
                   </div>
-                  <CRow>
-                    <CCol>
-                      <CButton type="button" variant="outline" className="w-100">
-                        <CIcon icon={google} className="me-1" />
-                        Login with Google
-                      </CButton>
-                    </CCol>
-                    <CCol>
-                      <CButton type="button" variant="outline" className="w-100">
-                        <CIcon icon={apple} className="me-1" />
-                        Login with Apple
-                      </CButton>
-                    </CCol>
-                  </CRow>
+
+                  <CButton
+                    type="button"
+                    variant="outline"
+                    className="w-100 py-2 d-flex align-items-center justify-content-center gap-2 fw-semibold"
+                    style={{ borderColor: '#CBD5E1', color: '#0B2D5B' }}
+                    onClick={handleGoogleLogin}
+                    disabled={cargando || cargandoGoogle}
+                  >
+                    {cargandoGoogle ? (
+                      <CSpinner size="sm" />
+                    ) : (
+                      <>
+                        <CIcon icon={google} />
+                        <span>Continuar con Google</span>
+                      </>
+                    )}
+                  </CButton>
+
+                  <div className="text-center mt-3 pt-2 border-top">
+                    <span className="text-secondary small me-1">¿Ya tienes una cuenta?</span>
+                    <Link
+                      to="/authentication/login"
+                      className="small text-decoration-none fw-bold"
+                      style={{ color: '#00C896' }}
+                    >
+                      Iniciar Sesión
+                    </Link>
+                  </div>
                 </CCardBody>
               </CCard>
-              <div className="text-body-secondary">
-                Already have an account? <Link to="/authentication/login">Sign in</Link>
+
+              <div className="text-center small text-secondary">
+                <Link to="/productos/catalogo" className="text-decoration-none fw-semibold" style={{ color: '#0B2D5B' }}>
+                  ← Volver a la Tienda Comercial
+                </Link>
               </div>
             </div>
           </CCol>

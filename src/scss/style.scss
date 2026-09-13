@@ -3,6 +3,7 @@
 );
 @use "@coreui/chartjs/scss/coreui-chartjs";
 @use "vendors/simplebar";
+@use "alelil-theme";
 
 body {
   background-color: var(--cui-tertiary-bg);
@@ -64,4 +65,120 @@ body {
   .footer {
     --cui-footer-bg: var(--cui-body-bg);
   }
+}
+
+/* Forzar paleta oficial Alelil */
+body, .wrapper {
+  background-color: #F4F6F8 !important;
+  color: #0B2D5B !important;
+}
+
+.header, .sidebar {
+  background-color: #FFFFFF !important;
+  border-bottom: 1px solid #E2E8F0 !important;
+}
+
+.card {
+  background-color: #FFFFFF !important;
+  border: 1px solid #E2E8F0 !important;
+  color: #0B2D5B !important;
+}
+
+/* Paleta Oficial Alelil para Catalogo.jsx */
+.card-header {
+  background-color: #0B2D5B !important;
+  color: #FFFFFF !important;
+}
+
+.card-header .small {
+  color: #00C896 !important;
+}
+
+/* Botón Agregar al Carrito (Naranja) */
+.btn-primary {
+  background-color: #FF8A00 !important;
+  border-color: #FF8A00 !important;
+  color: #FFFFFF !important;
+  font-weight: bold !important;
+}
+
+/* Badges de Categoría y Carrito (Verde Menta y Azul Navy) */
+.badge.bg-success, 
+.badge.bg-info {
+  background-color: #00C896 !important;
+  color: #0B2D5B !important;
+  font-weight: bold !important;
+}
+
+/* Precios en Azul Navy */
+.text-primary {
+  color: #0B2D5B !important;
+}
+
+/* Estilos Alelil para la Vista CRUD (Lista.jsx) */
+.table thead th {
+  background-color: #0B2D5B !important;
+  color: #FFFFFF !important;
+}
+
+.table tbody tr:hover {
+  background-color: #F4F6F8 !important;
+}
+
+/* Botón Editar */
+.btn-outline-warning,
+.btn-info {
+  background-color: #0B2D5B !important;
+  border-color: #0B2D5B !important;
+  color: #FFFFFF !important;
+}
+
+/* Botón Eliminar */
+.btn-outline-danger {
+  background-color: #DC2626 !important;
+  border-color: #DC2626 !important;
+  color: #FFFFFF !important;
+}
+
+/* --- CORRECCIÓN DE TEMA CLARO PARA TABLA CRUD ALELIL --- */
+
+/* Fondo general de la tarjeta y cuerpo */
+.card-body, 
+.card {
+  background-color: #ffffff !important;
+  color: #0B2D5B !important;
+}
+
+/* Forzar fondo blanco y texto oscuro en las filas de la tabla */
+.table, 
+.table tbody, 
+.table tbody tr, 
+.table tbody td {
+  background-color: #ffffff !important;
+  color: #0B2D5B !important;
+  border-color: #E2E8F0 !important;
+}
+
+/* Encabezado de la tabla en Azul Navy */
+.table thead th {
+  background-color: #0B2D5B !important;
+  color: #ffffff !important;
+}
+
+/* Estilo del campo de búsqueda */
+input[type="search"], 
+.form-control {
+  background-color: #ffffff !important;
+  color: #0B2D5B !important;
+  border: 1px solid #CBD5E1 !important;
+}
+
+input[type="search"]::placeholder {
+  color: #64748B !important;
+}
+
+/* Nombres de productos legibles en Azul Navy */
+.table tbody td strong, 
+.table tbody td span {
+  color: #0B2D5B !important;
 }

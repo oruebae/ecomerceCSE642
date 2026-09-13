@@ -1,108 +1,229 @@
-import React from 'react'
-import { Link } from 'react-router-dom'
+import React, { useState } from 'react'
+import { useNavigate, Link } from 'react-router-dom'
 import {
+  CAlert,
   CButton,
   CCard,
   CCardBody,
   CCol,
   CContainer,
   CForm,
-  CFormCheck,
   CFormInput,
   CFormLabel,
   CInputGroup,
-  CInputGroupText,
   CRow,
-  CTooltip,
+  CSpinner,
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
-import { apple } from 'src/assets/brand/apple'
 import { google } from 'src/assets/brand/google'
-import { logo } from 'src/assets/brand/logo'
-import { eye } from 'src/assets/icons/eye'
+import AlelilLogo from '../../../components/brand/AlelilLogo'
+import { supabase } from '../../../lib/supabase'
 
 const Login = () => {
+  const navigate = useNavigate()
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [cargando, setCargando] = useState(false)
+  const [cargandoGoogle, setCargandoGoogle] = useState(false)
+  const [errorMsg, setErrorMsg] = useState('')
+  const [successMsg, setSuccessMsg] = useState('')
+
+  // 1. Email & Password Login
+  const handleEmailLogin = async (e) => {
+    e.preventDefault()
+    setErrorMsg('')
+    setSuccessMsg('')
+
+    if (!email.trim() || !password.trim()) {
+      setErrorMsg('Por favor ingrese su correo electrónico y contraseña.')
+      return
+    }
+
+    setCargando(true)
+
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password: password,
+      })
+
+      if (error) {
+        if (error.message.includes('Invalid login credentials')) {
+          setErrorMsg('Credenciales incorrectas. Verifique su correo y contraseña.')
+        } else {
+          setErrorMsg(error.message || 'Error al iniciar sesión. Intente nuevamente.')
+        }
+      } else if (data?.session) {
+        setSuccessMsg('Inicio de sesión exitoso. Redirigiendo...')
+        setTimeout(() => {
+          navigate('/productos/lista')
+        }, 800)
+      }
+    } catch (err) {
+      setErrorMsg('Ocurrió un error inesperado al conectar con el servicio de autenticación.')
+    } finally {
+      setCargando(false)
+    }
+  }
+
+  // 2. Google OAuth Login
+  const handleGoogleLogin = async () => {
+    setErrorMsg('')
+    setCargandoGoogle(true)
+
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/#/productos/lista`,
+        },
+      })
+
+      if (error) {
+        setErrorMsg(`Error con Google OAuth: ${error.message}`)
+        setCargandoGoogle(false)
+      }
+    } catch (err) {
+      setErrorMsg('No se pudo iniciar el flujo de autenticación con Google.')
+      setCargandoGoogle(false)
+    }
+  }
+
   return (
-    <div className="bg-body-tertiary min-vh-100 d-flex flex-row align-items-center">
+    <div className="min-vh-100 d-flex flex-row align-items-center" style={{ backgroundColor: '#F4F6F8' }}>
       <CContainer>
         <CRow className="justify-content-center">
           <CCol md={8} lg={6} xl={5}>
             <div className="d-flex flex-column gap-4">
-              <div className="text-center">
-                <CIcon icon={logo} height={48} />
+              {/* Brand Logo Header */}
+              <div className="text-center py-2">
+                <AlelilLogo theme="light" height={46} showSlogan={true} />
               </div>
-              <CCard className="p-4">
-                <CCardBody className="d-flex flex-column gap-4">
-                  <h2 className="h5 text-center mb-0">Login to your account</h2>
-                  <CForm className="row gy-3">
+
+              <CCard className="shadow-sm border-0 rounded-4 overflow-hidden">
+                <div className="p-3 text-white text-center" style={{ backgroundColor: '#0B2D5B' }}>
+                  <h1 className="h5 fw-bold mb-0">Acceso Administrativo</h1>
+                  <small className="opacity-75">Alelil Oficial</small>
+                </div>
+
+                <CCardBody className="p-4 d-flex flex-column gap-3">
+                  {errorMsg && (
+                    <CAlert color="danger" dismissible onClick={() => setErrorMsg('')}>
+                      {errorMsg}
+                    </CAlert>
+                  )}
+
+                  {successMsg && (
+                    <CAlert color="success">
+                      {successMsg}
+                    </CAlert>
+                  )}
+
+                  <CForm onSubmit={handleEmailLogin} className="row gy-3">
                     <CCol xs={12}>
-                      <CFormLabel htmlFor="email">Email address</CFormLabel>
+                      <CFormLabel htmlFor="email" className="fw-semibold small text-dark">
+                        Correo electrónico
+                      </CFormLabel>
                       <CFormInput
                         id="email"
                         type="email"
-                        placeholder="your@email.com"
+                        placeholder="admin@tienda.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
                         autoComplete="email"
+                        required
+                        className="py-2"
                       />
                     </CCol>
+
                     <CCol xs={12}>
-                      <div className="d-flex justify-content-between">
-                        <CFormLabel htmlFor="password">Password</CFormLabel>
-                        <Link to="/authentication/reset-password">I forgot password</Link>
+                      <div className="d-flex justify-content-between align-items-center mb-1">
+                        <CFormLabel htmlFor="password" className="fw-semibold small text-dark mb-0">
+                          Contraseña
+                        </CFormLabel>
+                        <Link
+                          to="/authentication/reset-password"
+                          className="small text-decoration-none"
+                          style={{ color: '#00C896', fontWeight: 600 }}
+                        >
+                          ¿Olvidó su contraseña?
+                        </Link>
                       </div>
                       <CInputGroup>
                         <CFormInput
                           id="password"
                           type="password"
-                          placeholder="Your password"
+                          placeholder="••••••••"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
                           autoComplete="current-password"
+                          required
+                          className="py-2"
                         />
-                        <CInputGroupText>
-                          <CTooltip content="Show password">
-                            <CButton
-                              type="button"
-                              color="link"
-                              className="p-0 link-secondary"
-                              aria-label="Show password"
-                            >
-                              <CIcon icon={eye} size="sm" />
-                            </CButton>
-                          </CTooltip>
-                        </CInputGroupText>
                       </CInputGroup>
                     </CCol>
-                    <CCol xs={12}>
-                      <CFormCheck id="rememberMe" label="Remember me on this device" />
-                    </CCol>
-                    <CCol xs={12}>
-                      <CButton color="primary" type="submit" className="w-100">
-                        Sign in
+
+                    <CCol xs={12} className="mt-4">
+                      <CButton
+                        type="submit"
+                        className="w-100 py-2 border-0 fw-bold shadow-sm"
+                        style={{ backgroundColor: '#FF8A00', color: '#FFFFFF' }}
+                        disabled={cargando || cargandoGoogle}
+                      >
+                        {cargando ? (
+                          <>
+                            <CSpinner size="sm" className="me-2" />
+                            Iniciando sesión...
+                          </>
+                        ) : (
+                          'Iniciar Sesión'
+                        )}
                       </CButton>
                     </CCol>
                   </CForm>
-                  <div className="position-relative">
-                    <hr />
-                    <div className="position-absolute top-50 start-50 translate-middle bg-body px-2 text-body-tertiary text-uppercase small">
-                      or
+
+                  <div className="position-relative my-2">
+                    <hr className="text-secondary opacity-25" />
+                    <div className="position-absolute top-50 start-50 translate-middle bg-white px-3 text-secondary small font-monospace">
+                      O CONTINUAR CON
                     </div>
                   </div>
-                  <CRow>
-                    <CCol>
-                      <CButton type="button" variant="outline" className="w-100">
-                        <CIcon icon={google} className="me-1" />
-                        Login with Google
-                      </CButton>
-                    </CCol>
-                    <CCol>
-                      <CButton type="button" variant="outline" className="w-100">
-                        <CIcon icon={apple} className="me-1" />
-                        Login with Apple
-                      </CButton>
-                    </CCol>
-                  </CRow>
+
+                  <CButton
+                    type="button"
+                    variant="outline"
+                    className="w-100 py-2 d-flex align-items-center justify-content-center gap-2 fw-semibold"
+                    style={{ borderColor: '#CBD5E1', color: '#0B2D5B' }}
+                    onClick={handleGoogleLogin}
+                    disabled={cargando || cargandoGoogle}
+                  >
+                    {cargandoGoogle ? (
+                      <CSpinner size="sm" />
+                    ) : (
+                      <>
+                        <CIcon icon={google} />
+                        <span>Iniciar sesión con Google</span>
+                      </>
+                    )}
+                  </CButton>
+
+                  <div className="text-center mt-3 pt-2 border-top">
+                    <span className="text-secondary small me-1">¿No tienes una cuenta?</span>
+                    <Link
+                      to="/authentication/register"
+                      className="small text-decoration-none fw-bold"
+                      style={{ color: '#00C896' }}
+                    >
+                      Crear una cuenta
+                    </Link>
+                  </div>
                 </CCardBody>
               </CCard>
-              <div className="text-center text-body-secondary">
-                Need an account? <Link to="/authentication/register">Sign up</Link>
+
+              <div className="text-center small text-secondary">
+                <Link to="/productos/catalogo" className="text-decoration-none fw-semibold" style={{ color: '#0B2D5B' }}>
+                  ← Volver a la Tienda Comercial
+                </Link>
               </div>
             </div>
           </CCol>

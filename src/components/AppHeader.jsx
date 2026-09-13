@@ -170,7 +170,7 @@ const AppHeader = () => {
           </li>
           <CDropdown variant="nav-item" placement="bottom-end">
             <CDropdownToggle caret={false}>
-              {colorMode === 'dark' ? (
+              {colorMode === 'light' ? (
                 <CIcon icon={cilMoon} size="lg" />
               ) : colorMode === 'auto' ? (
                 <CIcon icon={cilContrast} size="lg" />
@@ -189,13 +189,13 @@ const AppHeader = () => {
                 <CIcon className="me-2" icon={cilSun} size="lg" /> Light
               </CDropdownItem>
               <CDropdownItem
-                active={colorMode === 'dark'}
+                active={colorMode === 'light'}
                 className="d-flex align-items-center"
                 as="button"
                 type="button"
-                onClick={() => setColorMode('dark')}
+                onClick={() => setColorMode('light')}
               >
-                <CIcon className="me-2" icon={cilMoon} size="lg" /> Dark
+                <CIcon className="me-2" icon={cilMoon} size="lg" /> Light
               </CDropdownItem>
               <CDropdownItem
                 active={colorMode === 'auto'}

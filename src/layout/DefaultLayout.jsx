@@ -20,22 +20,25 @@
  */
 
 import React from 'react'
+import { useLocation } from 'react-router-dom'
 import { AppContent, AppSidebar, AppFooter, AppHeader } from '../components/index'
 
-/**
- * DefaultLayout functional component
- *
- * Renders the main application layout with:
- * - Fixed sidebar navigation
- * - Sticky header
- * - Flexible content area
- * - Footer at bottom
- *
- * Uses flexbox for proper content stretching and footer positioning.
- *
- * @returns {React.ReactElement} Complete application layout
- */
 const DefaultLayout = () => {
+  const location = useLocation()
+  const isFullWidthPage =
+    location.pathname.includes('/productos/catalogo') ||
+    location.pathname.includes('/productos/lista') ||
+    location.pathname.includes('/productos/agregar') ||
+    location.pathname.includes('/productos/editar')
+
+  if (isFullWidthPage) {
+    return (
+      <div className="alelil-fullwidth-wrapper w-100 min-vh-100 p-0 m-0 bg-light">
+        <AppContent />
+      </div>
+    )
+  }
+
   return (
     <div>
       <AppSidebar />

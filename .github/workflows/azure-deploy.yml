@@ -32,8 +32,12 @@ jobs:
       - name: Empaquetar artefacto de despliegue para Azure
         run: |
           mkdir deploy_package
-          cp -r dist deploy_package/
-          cp package.json deploy_package/
+          if [ -d "dist" ]; then
+            cp -r dist/* deploy_package/
+          elif [ -d "build" ]; then
+            cp -r build/* deploy_package/
+          fi
+          [ -f package.json ] && cp package.json deploy_package/ || true
           [ -f package-lock.json ] && cp package-lock.json deploy_package/ || true
           [ -f server_mcp.js ] && cp server_mcp.js deploy_package/ || true
           [ -f web.config ] && cp web.config deploy_package/ || true

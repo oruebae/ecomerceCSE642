@@ -18,10 +18,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20.x'
-          cache: 'npm'
 
       - name: Instalar dependencias
-        run: npm ci
+        run: npm install
 
       - name: Compilar Frontend en Vite
         run: npm run build
@@ -34,7 +33,11 @@ jobs:
         run: |
           mkdir deploy_package
           cp -r dist deploy_package/
-          cp server_mcp.js package.json package-lock.json web.config process.json deploy_package/
+          cp package.json deploy_package/
+          [ -f package-lock.json ] && cp package-lock.json deploy_package/ || true
+          [ -f server_mcp.js ] && cp server_mcp.js deploy_package/ || true
+          [ -f web.config ] && cp web.config deploy_package/ || true
+          [ -f process.json ] && cp process.json deploy_package/ || true
 
       - name: Desplegar en Azure Web App
         uses: azure/webapps-deploy@v3

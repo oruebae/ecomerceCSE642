@@ -6,29 +6,62 @@ import { supabase } from '../../lib/supabase'
 /**
  * RutaProtegida Component
  * Ensures routes are accessible only by authenticated users.
- * If requireAdmin is true, enforces that the logged-in email is specifically admin@tienda.com.
- * Redirects unauthenticated users to /authentication/login and blocks non-admin users with an Access Denied view.
+ * Implements Role-Based Access Control (RBAC) querying the roles_usuario table.
+ * If requireAdmin is true, checks if the logged-in user has the 'admin' role.
  */
 const RutaProtegida = ({ children, requireAdmin = false }) => {
   const [session, setSession] = useState(null)
+  const [userRole, setUserRole] = useState(null)
   const [cargando, setCargando] = useState(true)
 
   useEffect(() => {
     let mounted = true
 
+    const verificarAccesoRBAC = async (activeSession) => {
+      if (!activeSession?.user) {
+        if (mounted) setCargando(false)
+        return
+      }
+
+      try {
+        // Query user role from roles_usuario table (RBAC)
+        const { data, error } = await supabase
+          .from('roles_usuario')
+          .select('rol')
+          .eq('user_id', activeSession.user.id)
+          .maybeSingle()
+
+        if (mounted) {
+          if (!error && data?.rol) {
+            setUserRole(data.rol)
+          } else if (activeSession.user.email === 'admin@tienda.com') {
+            setUserRole('admin')
+          } else {
+            setUserRole('cliente')
+          }
+        }
+      } catch (err) {
+        if (mounted) {
+          setUserRole(activeSession.user?.email === 'admin@tienda.com' ? 'admin' : 'cliente')
+        }
+      } finally {
+        if (mounted) setCargando(false)
+      }
+    }
+
     // Fetch initial active session
     supabase.auth.getSession().then(({ data: { session: activeSession } }) => {
       if (mounted) {
         setSession(activeSession)
-        setCargando(false)
+        verificarAccesoRBAC(activeSession)
       }
     })
 
-    // Listen for auth state changes (login, logout, token refresh)
+    // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, currentSession) => {
       if (mounted) {
         setSession(currentSession)
-        setCargando(false)
+        verificarAccesoRBAC(currentSession)
       }
     })
 
@@ -42,7 +75,7 @@ const RutaProtegida = ({ children, requireAdmin = false }) => {
     return (
       <div className="d-flex justify-content-center align-items-center min-vh-100 bg-light">
         <CSpinner style={{ color: '#00C896' }} />
-        <span className="ms-3 fw-semibold text-secondary">Verificando sesión...</span>
+        <span className="ms-3 fw-semibold text-secondary">Verificando sesión y permisos RBAC...</span>
       </div>
     )
   }
@@ -51,8 +84,10 @@ const RutaProtegida = ({ children, requireAdmin = false }) => {
     return <Navigate to="/authentication/login" replace />
   }
 
-  // Strict role evaluation: If requireAdmin is set, demand admin@tienda.com
-  if (requireAdmin && session.user?.email !== 'admin@tienda.com') {
+  // Dynamic RBAC role evaluation: If requireAdmin is set, demand 'admin' role
+  const esAdmin = userRole === 'admin' || session.user?.email === 'admin@tienda.com'
+
+  if (requireAdmin && !esAdmin) {
     return (
       <div className="min-vh-100 d-flex align-items-center justify-content-center bg-light p-4">
         <div
@@ -76,12 +111,12 @@ const RutaProtegida = ({ children, requireAdmin = false }) => {
           </div>
 
           <h3 className="h5 fw-bold mb-2" style={{ color: '#0B2D5B' }}>
-            Acceso Restringido - Requiere Admin
+            Acceso Restringido - Control de Acceso por Roles (RBAC)
           </h3>
           <p className="text-secondary small mb-4">
-            Has iniciado sesión con el correo <strong className="text-dark">{session.user?.email}</strong>.
-            Sin embargo, las funciones de administración están reservadas exclusivamente para el correo{' '}
-            <strong style={{ color: '#0B2D5B' }}>admin@tienda.com</strong>.
+            Has iniciado sesión con el usuario <strong className="text-dark">{session.user?.email}</strong>.
+            Tu rol actual registrado es <span className="badge bg-secondary">{userRole || 'Cliente'}</span>.
+            Las funciones de administración requieren asignación previa del rol <strong style={{ color: '#0B2D5B' }}>admin</strong> en el sistema RBAC.
           </p>
 
           <div className="d-flex flex-column gap-2">
@@ -112,3 +147,4 @@ const RutaProtegida = ({ children, requireAdmin = false }) => {
 }
 
 export default RutaProtegida
+

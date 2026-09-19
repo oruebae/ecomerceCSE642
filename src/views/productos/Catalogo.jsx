@@ -18,6 +18,7 @@ import AlelilOffers from '../../components/alelil/AlelilOffers'
 import AlelilBenefits from '../../components/alelil/AlelilBenefits'
 import AlelilFooter from '../../components/alelil/AlelilFooter'
 import AlelilCartModal, { formatearPrecioCOP } from '../../components/alelil/AlelilCartModal'
+import AlelilAIAssistant from '../../components/alelil/AlelilAIAssistant'
 
 const CatalogoProductos = () => {
   const { productos, cargando, error, recargar } = useProductos()
@@ -378,7 +379,13 @@ const CatalogoProductos = () => {
         onVaciarCarrito={vaciarCarrito}
       />
 
-      {/* 9. Commercial Footer */}
+      {/* 9. Asistente Inteligente IA con Servidor MCP */}
+      <AlelilAIAssistant
+        onAgregarAlCarrito={agregarAlCarrito}
+        carritoItems={carritoItems}
+      />
+
+      {/* 10. Commercial Footer */}
       <AlelilFooter
         categorias={categoriasDinamicas}
         onSelectCategory={handleSelectCategoria}

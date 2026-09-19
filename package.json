@@ -12,11 +12,13 @@
   },
   "license": "MIT",
   "author": "The CoreUI Team (https://github.com/orgs/coreui/people)",
+  "type": "module",
   "scripts": {
     "build": "vite build",
     "lint": "eslint",
     "serve": "vite preview",
-    "start": "vite"
+    "start": "vite",
+    "start:backend": "node server_mcp.js"
   },
   "dependencies": {
     "@coreui/chartjs": "^4.2.0",
@@ -26,11 +28,16 @@
     "@coreui/react": "^5.13.0",
     "@coreui/react-chartjs": "^3.0.0",
     "@coreui/utils": "^2.0.2",
+    "@google/genai": "^2.23.0",
+    "@modelcontextprotocol/sdk": "^1.30.0",
     "@popperjs/core": "^2.11.8",
     "@supabase/supabase-js": "2.112.3",
     "chart.js": "^4.5.1",
     "classnames": "^2.5.1",
     "core-js": "^3.50.0",
+    "cors": "^2.8.6",
+    "dotenv": "^18.0.1",
+    "express": "^5.2.1",
     "prop-types": "^15.8.1",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",

@@ -1,50 +1,75 @@
 -- ==========================================================================
--- POLÍTICAS DE SEGURIDAD RLS (ROW LEVEL SECURITY) PARA SUPABASE
+-- POLÍTICAS DE SEGURIDAD RLS (ROW LEVEL SECURITY) Y RBAC PARA SUPABASE
 -- Proyecto: eCommerce BIU 2026 - Alelil Oficial
--- Tabla: productos
+-- Control de Acceso Basado en Roles (RBAC - Role-Based Access Control)
 -- ==========================================================================
 
--- 1. Habilitar Row Level Security (RLS) en la tabla 'productos'
-ALTER TABLE productos ENABLE ROW LEVEL SECURITY;
+-- 1. Crear tabla de roles de usuario para desacoplar permisos de la identidad del correo
+CREATE TABLE IF NOT EXISTS public.roles_usuario (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID NOT NULL UNIQUE REFERENCES auth.users(id) ON DELETE CASCADE,
+  rol TEXT NOT NULL CHECK (rol IN ('admin', 'cliente', 'vendedor')),
+  creado_en TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
 
--- 2. Eliminar políticas previas si existen para evitar conflictos
-DROP POLICY IF EXISTS "Permitir lectura publica de productos" ON productos;
-DROP POLICY IF EXISTS "Permitir insercion solo a admin autenticado" ON productos;
-DROP POLICY IF EXISTS "Permitir actualizacion solo a admin autenticado" ON productos;
-DROP POLICY IF EXISTS "Permitir eliminacion solo a admin autenticado" ON productos;
+-- Habilitar RLS en la tabla roles_usuario
+ALTER TABLE public.roles_usuario ENABLE ROW LEVEL SECURITY;
 
--- 3. POLÍTICA DE LECTURA PÚBLICA (SELECT)
--- Permite que cualquier usuario (autenticado o no) consulte el catálogo de productos
+-- Política de lectura de roles: un usuario puede ver su propio rol
+CREATE POLICY "Permitir lectura del propio rol"
+ON public.roles_usuario FOR SELECT
+TO authenticated
+USING (auth.uid() = user_id);
+
+-- 2. Función de seguridad helper para verificar si un usuario es Administrador (RBAC)
+CREATE OR REPLACE FUNCTION public.es_admin(uid UUID)
+RETURNS BOOLEAN AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM public.roles_usuario
+    WHERE user_id = uid AND rol = 'admin'
+  );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- 3. Habilitar Row Level Security (RLS) en la tabla 'productos'
+ALTER TABLE public.productos ENABLE ROW LEVEL SECURITY;
+
+-- Eliminar políticas previas para evitar conflictos
+DROP POLICY IF EXISTS "Permitir lectura publica de productos" ON public.productos;
+DROP POLICY IF EXISTS "Permitir insercion solo a admin autenticado" ON public.productos;
+DROP POLICY IF EXISTS "Permitir actualizacion solo a admin autenticado" ON public.productos;
+DROP POLICY IF EXISTS "Permitir eliminacion solo a admin autenticado" ON public.productos;
+
+-- 4. POLÍTICA DE LECTURA PÚBLICA (SELECT)
 CREATE POLICY "Permitir lectura publica de productos"
-ON productos FOR SELECT
+ON public.productos FOR SELECT
 USING (true);
 
--- 4. POLÍTICA DE INSERCIÓN (INSERT) RESTRINGIDA A ADMINISTRADOR
--- Permite insertar productos únicamente si la sesión está autenticada y el correo es admin@tienda.com
+-- 5. POLÍTICA DE INSERCIÓN (INSERT) RESTRINGIDA A ADMINISTRADOR (RBAC)
 CREATE POLICY "Permitir insercion solo a admin autenticado"
-ON productos FOR INSERT
+ON public.productos FOR INSERT
 TO authenticated
 WITH CHECK (
-  (auth.jwt() ->> 'email') = 'admin@tienda.com'
+  public.es_admin(auth.uid()) OR (auth.jwt() ->> 'email') = 'admin@tienda.com'
 );
 
--- 5. POLÍTICA DE ACTUALIZACIÓN (UPDATE) RESTRINGIDA A ADMINISTRADOR
--- Permite actualizar productos únicamente al administrador autenticado
+-- 6. POLÍTICA DE ACTUALIZACIÓN (UPDATE) RESTRINGIDA A ADMINISTRADOR (RBAC)
 CREATE POLICY "Permitir actualizacion solo a admin autenticado"
-ON productos FOR UPDATE
+ON public.productos FOR UPDATE
 TO authenticated
 USING (
-  (auth.jwt() ->> 'email') = 'admin@tienda.com'
+  public.es_admin(auth.uid()) OR (auth.jwt() ->> 'email') = 'admin@tienda.com'
 )
 WITH CHECK (
-  (auth.jwt() ->> 'email') = 'admin@tienda.com'
+  public.es_admin(auth.uid()) OR (auth.jwt() ->> 'email') = 'admin@tienda.com'
 );
 
--- 6. POLÍTICA DE ELIMINACIÓN (DELETE) RESTRINGIDA A ADMINISTRADOR
--- Permite eliminar productos únicamente al administrador autenticado
+-- 7. POLÍTICA DE ELIMINACIÓN (DELETE) RESTRINGIDA A ADMINISTRADOR (RBAC)
 CREATE POLICY "Permitir eliminacion solo a admin autenticado"
-ON productos FOR DELETE
+ON public.productos FOR DELETE
 TO authenticated
 USING (
-  (auth.jwt() ->> 'email') = 'admin@tienda.com'
+  public.es_admin(auth.uid()) OR (auth.jwt() ->> 'email') = 'admin@tienda.com'
 );
+

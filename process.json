@@ -1,0 +1,14 @@
+{
+  "apps": [
+    {
+      "name": "alelil-mcp-backend",
+      "script": "server_mcp.js",
+      "instances": "max",
+      "exec_mode": "cluster",
+      "env": {
+        "NODE_ENV": "production",
+        "PORT": 8000
+      }
+    }
+  ]
+}

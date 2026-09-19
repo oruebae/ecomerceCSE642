@@ -39,6 +39,6 @@ jobs:
       - name: Desplegar en Azure Web App
         uses: azure/webapps-deploy@v3
         with:
-          app-name: 'alelil-ecommerce-mcp'
-          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          app-name: 'alelilecommerce'
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}
           package: './deploy_package'

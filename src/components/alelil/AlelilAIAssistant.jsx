@@ -70,8 +70,9 @@ const AlelilAIAssistant = ({ onAgregarAlCarrito, carritoItems = [] }) => {
     setCargando(true)
 
     try {
+      const endpointApi = import.meta.env.VITE_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:8000/api/chat' : '/api/chat')
       // API call to Node.js MCP server bridge endpoint
-      const response = await fetch('http://localhost:8000/api/chat', {
+      const response = await fetch(endpointApi, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: prompt.trim() }),

@@ -15,8 +15,8 @@ import dotenv from 'dotenv'
 dotenv.config()
 
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || ''
-const MCP_API_URL = process.env.MCP_API_URL || 'http://localhost:8000/api/chat'
-const WEB_APP_URL = process.env.WEB_APP_URL || 'https://alelil-ecommerce.azurewebsites.net'
+const MCP_API_URL = process.env.MCP_API_URL || 'https://alelilecommerce-drdvebf4bfgef7ds.centralus-01.azurewebsites.net/api/chat'
+const WEB_APP_URL = process.env.WEB_APP_URL || 'https://alelilecommerce-drdvebf4bfgef7ds.centralus-01.azurewebsites.net/#/productos/catalogo'
 
 if (!TELEGRAM_BOT_TOKEN) {
   console.log('[Telegram Bot Info] No se configuró TELEGRAM_BOT_TOKEN en el archivo .env.')
